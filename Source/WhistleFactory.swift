@@ -31,8 +31,6 @@ open class WhistleFactory: UIViewController {
   open var viewController: UIViewController?
   open var hideTimer = Timer()
 
-  private weak var previousKeyWindow: UIWindow?
-
   // MARK: - Initializers
 
   override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -103,7 +101,7 @@ open class WhistleFactory: UIViewController {
         NSString(string: text).boundingRect(
           with: CGSize(width: labelWidth, height: CGFloat.infinity),
           options: NSStringDrawingOptions.usesLineFragmentOrigin,
-          attributes: [NSFontAttributeName: titleLabel.font],
+          attributes: [NSAttributedStringKey.font: titleLabel.font],
           context: nil
         )
       titleLabelHeight = CGFloat(neededDimensions.size.height)
@@ -132,10 +130,6 @@ open class WhistleFactory: UIViewController {
   public func present() {
     hideTimer.invalidate()
 
-    if UIApplication.shared.keyWindow != whistleWindow {
-      previousKeyWindow = UIApplication.shared.keyWindow
-    }
-
     let initialOrigin = whistleWindow.frame.origin.y
     whistleWindow.frame.origin.y = initialOrigin - titleLabelHeight
     whistleWindow.makeKeyAndVisible()
@@ -149,10 +143,9 @@ open class WhistleFactory: UIViewController {
     UIView.animate(withDuration: 0.2, animations: {
       self.whistleWindow.frame.origin.y = finalOrigin
       }, completion: { _ in
-        if let window = self.previousKeyWindow {
+        if let window = UIApplication.shared.windows.filter({ $0 != self.whistleWindow }).first {
           window.makeKeyAndVisible()
           self.whistleWindow.windowLevel = UIWindowLevelNormal - 1
-          self.previousKeyWindow = nil
           window.rootViewController?.setNeedsStatusBarAppearanceUpdate()
         }
     })
@@ -165,11 +158,11 @@ open class WhistleFactory: UIViewController {
 
   // MARK: - Timer methods
 
-  public func timerDidFire() {
+    @objc public func timerDidFire() {
     hide()
   }
 
-  func orientationDidChange() {
+    @objc func orientationDidChange() {
     if whistleWindow.isKeyWindow {
       setupFrames()
       hide()
